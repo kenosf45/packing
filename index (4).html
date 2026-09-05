@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pack List">
+<meta name="theme-color" content="#1B2A2E">
+<title>Pack List</title>
+<style>
+  :root{
+    --paper:#ECEEEC;
+    --ink:#16232A;
+    --ink-soft:#4B5B60;
+    --line: rgba(22,35,42,0.12);
+    --canvas:#3F6355;
+    --canvas-soft:#EAF1EC;
+    --tag:#C98A3E;
+    --tag-soft:#FBF0DF;
+    --card:#FFFFFF;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+    display:flex;
+    justify-content:center;
+  }
+  #app{
+    width:100%;
+    max-width:460px;
+    min-height:100vh;
+    padding:28px 20px 60px;
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* ---------- Shared ---------- */
+  h1.brand{
+    font-size:15px;
+    font-weight:600;
+    letter-spacing:0.02em;
+    color:var(--canvas);
+    margin:0 0 4px;
+  }
+  .screen{display:none;}
+  .screen.active{display:flex; flex-direction:column; flex:1;}
+
+  /* ---------- Home screen ---------- */
+  #home{justify-content:center; gap:36px; text-align:center;}
+  #home .prompt{font-size:22px; line-height:1.4; margin:0; font-weight:500;}
+  .stepper{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:22px;
+  }
+  .stepper button{
+    width:56px; height:56px;
+    border-radius:50%;
+    border:1px solid var(--line);
+    background:var(--card);
+    font-size:26px;
+    color:var(--canvas);
+    display:flex; align-items:center; justify-content:center;
+    line-height:1;
+    cursor:pointer;
+  }
+  .stepper button:active{background:var(--canvas-soft);}
+  #dayInput{
+    width:110px;
+    text-align:center;
+    font-size:56px;
+    font-weight:600;
+    border:none;
+    background:transparent;
+    color:var(--ink);
+    -moz-appearance:textfield;
+  }
+  #dayInput::-webkit-outer-spin-button,
+  #dayInput::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
+  #dayInput:focus{outline:none;}
+  .day-label{font-size:14px; color:var(--ink-soft); margin-top:8px;}
+
+  .btn-primary{
+    background:var(--canvas);
+    color:#fff;
+    border:none;
+    padding:16px 20px;
+    font-size:16px;
+    font-weight:600;
+    border-radius:12px;
+    cursor:pointer;
+    width:100%;
+  }
+  .btn-primary:active{opacity:0.85;}
+
+  /* ---------- Checklist screen ---------- */
+  #list header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:22px;
+  }
+  #list header .days-chip{
+    font-size:14px;
+    color:var(--ink-soft);
+  }
+  #list header .days-chip b{color:var(--ink); font-weight:600;}
+  .link-btn{
+    background:none;
+    border:none;
+    color:var(--canvas);
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    padding:6px 0;
+  }
+
+  section.group{margin-bottom:28px;}
+  section.group h2{
+    font-size:13px;
+    font-weight:600;
+    color:var(--ink-soft);
+    margin:0 0 10px;
+    padding-bottom:8px;
+    border-bottom:1px solid var(--line);
+  }
+
+  .row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:11px 2px;
+    border-bottom:1px solid var(--line);
+  }
+  .row:last-child{border-bottom:none;}
+
+  .check{
+    width:22px; height:22px;
+    min-width:22px;
+    border-radius:6px;
+    border:1.6px solid var(--ink-soft);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    transition:background 0.12s ease, border-color 0.12s ease;
+  }
+  .check svg{width:13px; height:13px; opacity:0; transform:scale(0.6); transition:opacity .12s ease, transform .12s ease;}
+  .row.checked .check{background:var(--canvas); border-color:var(--canvas);}
+  .row.checked .check svg{opacity:1; transform:scale(1);}
+  .row.checked .item-name{color:var(--ink-soft); text-decoration:line-through; text-decoration-color:var(--line);}
+
+  .item-name{flex:1; font-size:15.5px;}
+  .qty{
+    font-size:13px;
+    font-weight:600;
+    color:var(--tag);
+    background:var(--tag-soft);
+    border-radius:20px;
+    padding:3px 10px;
+    min-width:28px;
+    text-align:center;
+  }
+
+  .remove-x{
+    background:none; border:none;
+    color:var(--ink-soft);
+    font-size:18px;
+    cursor:pointer;
+    padding:0 2px;
+  }
+
+  .add-row{
+    display:flex;
+    gap:8px;
+    margin-top:6px;
+  }
+  .add-row input{
+    flex:1;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:11px 12px;
+    font-size:15px;
+    background:var(--card);
+    color:var(--ink);
+    font-family:inherit;
+  }
+  .add-row input:focus{outline:none; border-color:var(--canvas);}
+  .add-row button{
+    border:none;
+    background:var(--canvas);
+    color:#fff;
+    border-radius:10px;
+    padding:0 18px;
+    font-size:20px;
+    cursor:pointer;
+  }
+
+  .empty-note{font-size:13.5px; color:var(--ink-soft); padding:6px 2px 2px;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="home" class="screen">
+    <div>
+      <h1 class="brand">Pack List</h1>
+    </div>
+    <div>
+      <p class="prompt">How many days?</p>
+    </div>
+    <div>
+      <div class="stepper">
+        <button id="minus" type="button" aria-label="decrease">–</button>
+        <input id="dayInput" type="number" inputmode="numeric" min="1" max="30" value="3">
+        <button id="plus" type="button" aria-label="increase">+</button>
+      </div>
+      <div class="day-label">days home</div>
+    </div>
+    <div>
+      <button class="btn-primary" id="generateBtn">Generate checklist</button>
+    </div>
+  </div>
+
+  <div id="list" class="screen">
+    <header>
+      <button class="link-btn" id="backBtn">← New list</button>
+      <div class="days-chip"><b id="daysReadout"></b> days</div>
+    </header>
+
+    <section class="group">
+      <h2>Daily items</h2>
+      <div id="scaledGroup"></div>
+    </section>
+
+    <section class="group">
+      <h2>Bring once</h2>
+      <div id="fixedGroup"></div>
+    </section>
+
+    <section class="group">
+      <h2>Extras</h2>
+      <div id="extraGroup"></div>
+      <div class="add-row">
+        <input id="extraInput" type="text" placeholder="Add something else…">
+        <button id="addExtraBtn" type="button">+</button>
+      </div>
+    </section>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  var STORAGE_KEY = "packlist.state.v1";
+
+  // ---- Item formulas (per day count `d`) ----
+  var SCALED_DEFS = [
+    { key:"shirts",    name:"Shirts",                 qty:function(d){ return Math.max(d,2); } },
+    { key:"pants",     name:"Pants",                   qty:function(d){ return Math.ceil(d/2); } },
+    { key:"boxers",    name:"Boxers",                  qty:function(d){ return Math.ceil(d/2); } },
+    { key:"socks",     name:"Socks",                   qty:function(d){ return d; } },
+    { key:"pjs",       name:"Pajamas",                 qty:function(d){ return Math.ceil(d/3); } },
+    { key:"vitd",      name:"Vitamin D3 (2000 IU)",    qty:function(d){ return d; } },
+    { key:"omega3",    name:"Omega-3 (fish oil)",      qty:function(d){ return d*3; } },
+    { key:"b50",       name:"B-50 Complex",            qty:function(d){ return d; } },
+    { key:"creatine",  name:"Creatine (scoops)",       qty:function(d){ return d; } },
+    { key:"whey",      name:"Whey protein (scoops)",   qty:function(d){ return d; } },
+    { key:"magnesium", name:"Magnesium glycinate",     qty:function(d){ return d*2; } },
+    { key:"melatonin", name:"Melatonin (10mg)",        qty:function(d){ return d; } },
+    { key:"floss",     name:"Floss picks",             qty:function(d){ return d*2; } }
+  ];
+
+  var FIXED_DEFS = [
+    "Toothbrush",
+    "Hairbrush",
+    "Deodorant",
+    "Cologne",
+    "CeraVe Acne Control Cleanser",
+    "TruSkin Vitamin C Serum",
+    "CeraVe Moisturizer (AM)",
+    "Sunscreen SPF 30+",
+    "Differin (adapalene)",
+    "CeraVe PM Moisturizer",
+    "Laptop",
+    "Laptop charger",
+    "Mouse",
+    "Phone charger",
+    "Book"
+  ];
+
+  var CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 12.5L9.5 18L20 6" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  var homeEl = document.getElementById("home");
+  var listEl = document.getElementById("list");
+  var dayInput = document.getElementById("dayInput");
+
+  function clamp(n){
+    n = parseInt(n,10);
+    if(isNaN(n)) n = 1;
+    if(n<1) n=1;
+    if(n>30) n=30;
+    return n;
+  }
+
+  function loadState(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    }catch(e){ return null; }
+  }
+  function saveState(state){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+  }
+
+  var state = loadState();
+
+  function showHome(){
+    homeEl.classList.add("active");
+    listEl.classList.remove("active");
+  }
+  function showList(){
+    listEl.classList.add("active");
+    homeEl.classList.remove("active");
+  }
+
+  function buildRow(key, name, qty, checked, removable){
+    var row = document.createElement("div");
+    row.className = "row" + (checked ? " checked" : "");
+    row.dataset.key = key;
+
+    var check = document.createElement("div");
+    check.className = "check";
+    check.innerHTML = CHECK_SVG;
+
+    var nameEl = document.createElement("div");
+    nameEl.className = "item-name";
+    nameEl.textContent = name;
+
+    row.appendChild(check);
+    row.appendChild(nameEl);
+
+    if(qty !== null){
+      var qtyEl = document.createElement("div");
+      qtyEl.className = "qty";
+      qtyEl.textContent = "×" + qty;
+      row.appendChild(qtyEl);
+    }
+
+    if(removable){
+      var xBtn = document.createElement("button");
+      xBtn.className = "remove-x";
+      xBtn.type = "button";
+      xBtn.textContent = "×";
+      xBtn.addEventListener("click", function(e){
+        e.stopPropagation();
+        state.extras = state.extras.filter(function(ex){ return ex.key !== key; });
+        saveState(state);
+        render();
+      });
+      row.appendChild(xBtn);
+    }
+
+    row.addEventListener("click", function(e){
+      if(e.target.classList.contains("remove-x")) return;
+      state.checked[key] = !state.checked[key];
+      saveState(state);
+      row.classList.toggle("checked", !!state.checked[key]);
+    });
+
+    return row;
+  }
+
+  function render(){
+    document.getElementById("daysReadout").textContent = state.days;
+
+    var scaledGroup = document.getElementById("scaledGroup");
+    scaledGroup.innerHTML = "";
+    SCALED_DEFS.forEach(function(def){
+      var q = def.qty(state.days);
+      scaledGroup.appendChild(buildRow(def.key, def.name, q, !!state.checked[def.key], false));
+    });
+
+    var fixedGroup = document.getElementById("fixedGroup");
+    fixedGroup.innerHTML = "";
+    FIXED_DEFS.forEach(function(name, i){
+      var key = "fixed_" + i;
+      fixedGroup.appendChild(buildRow(key, name, null, !!state.checked[key], false));
+    });
+
+    var extraGroup = document.getElementById("extraGroup");
+    extraGroup.innerHTML = "";
+    if(state.extras.length === 0){
+      var note = document.createElement("div");
+      note.className = "empty-note";
+      note.textContent = "Nothing added yet.";
+      extraGroup.appendChild(note);
+    } else {
+      state.extras.forEach(function(ex){
+        extraGroup.appendChild(buildRow(ex.key, ex.name, null, !!state.checked[ex.key], true));
+      });
+    }
+  }
+
+  function generate(days){
+    state = { days: days, checked:{}, extras: [] };
+    saveState(state);
+    render();
+    showList();
+  }
+
+  document.getElementById("minus").addEventListener("click", function(){
+    dayInput.value = clamp(parseInt(dayInput.value||"1",10) - 1);
+  });
+  document.getElementById("plus").addEventListener("click", function(){
+    dayInput.value = clamp(parseInt(dayInput.value||"1",10) + 1);
+  });
+  dayInput.addEventListener("change", function(){
+    dayInput.value = clamp(dayInput.value);
+  });
+
+  document.getElementById("generateBtn").addEventListener("click", function(){
+    generate(clamp(dayInput.value));
+  });
+
+  document.getElementById("backBtn").addEventListener("click", function(){
+    showHome();
+  });
+
+  document.getElementById("addExtraBtn").addEventListener("click", addExtra);
+  document.getElementById("extraInput").addEventListener("keydown", function(e){
+    if(e.key === "Enter") addExtra();
+  });
+  function addExtra(){
+    var input = document.getElementById("extraInput");
+    var val = input.value.trim();
+    if(!val) return;
+    var key = "extra_" + Date.now();
+    state.extras.push({ key:key, name:val });
+    saveState(state);
+    input.value = "";
+    render();
+  }
+
+  // ---- Init ----
+  if(state && state.days){
+    render();
+    showList();
+  } else {
+    showHome();
+  }
+})();
+</script>
+</body>
+</html>
